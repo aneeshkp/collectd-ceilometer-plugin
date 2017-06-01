@@ -21,7 +21,7 @@ import collectd_ceilometer
 from collectd_ceilometer.common.keystone_light import ClientV3
 from collectd_ceilometer.common.keystone_light import KeystoneException
 from collectd_ceilometer.common.settings import Config
-
+import collectd
 import json
 import logging
 import requests
@@ -191,6 +191,7 @@ class Sender(object):
         endpoint = self._keystone.get_service_endpoint(
             service,
             Config.instance().CEILOMETER_URL_TYPE)
+        LOGGER.info(endpoint)
         return endpoint
 
     def _get_alarm_id(self, alarm_name, severity, metername, message):
@@ -214,7 +215,7 @@ class Sender(object):
                       alarm_name, message):
         """Create a new alarm with a new alarm_id."""
         url = "{}/v2/alarms/".format(endpoint)
-
+        
         rule = {'event_type': metername, }
         payload = json.dumps({'state': self._get_alarm_state(message),
                               'name': alarm_name,
@@ -222,10 +223,11 @@ class Sender(object):
                               'type': "event",
                               'event_rule': rule,
                               })
-
+        collectd.info("*********************************%s" %(url))
+        collectd.info("***************")
         result = self._perform_post_request(url, payload, self._auth_token)
+        collectd.info("Resukts %s" %(result.text))
         alarm_id = json.loads(result.text)['alarm_id']
-        LOGGER.debug("alarm_id=%s", alarm_id)
         return alarm_id
 
     def _get_alarm_state(self, message):
@@ -249,6 +251,7 @@ class Sender(object):
         url = self._url_base % (alarm_id)
         # create the payload and update the state of the alarm
         payload = json.dumps(self._get_alarm_state(message))
+        collectd.info("@@@@@@@@@@@@@ PAYLOAD %s" %(payload))
         return self._perform_update_request(url, auth_token, payload)
 
     @classmethod

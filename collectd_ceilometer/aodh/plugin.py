@@ -24,7 +24,8 @@ except ImportError:
     collectd = None  # when running unit tests collectd is not avaliable
 
 import collectd_ceilometer
-from collectd_ceilometer.aodh.notifier import Notifier
+#from collectd_ceilometer.aodh.notifier import Notifier
+from collectd_ceilometer.aodh.writer import Writer
 from collectd_ceilometer.common.logger import CollectdLogHandler
 from collectd_ceilometer.common.meters import MeterStorage
 from collectd_ceilometer.common.settings import Config
@@ -50,8 +51,8 @@ def register_plugin(collectd):
     # Register plugin callbacks
     collectd.register_config(instance.config)
     collectd.register_shutdown(instance.shutdown)
-    collectd.register_notification(instance.notify)
-
+    #collectd.register_notification(instance.notify)
+    collectd.register_write(instance.write)
 
 class Plugin(object):
     """Aodh plugin with collectd callbacks."""
@@ -62,7 +63,8 @@ class Plugin(object):
         """Plugin instance."""
         self._config = config
         self._meters = MeterStorage(collectd=collectd)
-        self._notifier = Notifier(self._meters, config=config)
+        #self._notifier = Notifier(self._meters, config=config)
+        self._writer = Writer(self._meters, config=config)
 
     def config(self, cfg):
         """Configuration callback.
@@ -71,10 +73,10 @@ class Plugin(object):
         """
         self._config.read(cfg)
 
-    def notify(self, vl, data=None):
-        """Notification callback."""
-        LOGGER.info("Notification")
-        self._notifier.notify(vl, data)
+    def write(self, vl, data=None):
+        """write callback."""
+        LOGGER.info("AODH ***********************Notification")
+        self._writer.write(vl, data)
 
     def shutdown(self):
         """Shutdown callback."""
